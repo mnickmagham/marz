@@ -1,8 +1,31 @@
+version: '3.8'
+
 services:
   marzban:
-    image: gozargah/marzban:latest
-    restart: always
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
     env_file: .env
-    network_mode: host
+    environment:
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+      - XRAY_SUBSCRIPTION_URL_PREFIX=https://marz.timelessmovies.sbs
+      - SUDO_USERNAME=admin
+      - SUDO_PASSWORD=admin
+      - SQLALCHEMY_DATABASE_URL=sqlite:///var/lib/marzban/db.sqlite3
     volumes:
-      - /var/lib/marzban:/var/lib/marzban
+      - marzban_data:/var/lib/marzban
+      - marzban_config:/opt/marzban
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  marzban_data:
+    driver: local
+  marzban_config:
+    driver: local
